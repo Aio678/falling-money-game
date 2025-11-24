@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { ArrowLeft, Medal, WifiOff } from 'lucide-react';
+import { ArrowLeft, Medal } from 'lucide-react';
 import { ScoreEntry } from '../types';
 import { dataManager } from '../utils/dataManager';
 
@@ -80,12 +80,6 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ onBack }) => {
               </div>
             ))
           )}
-        </div>
-
-        <div className="p-4 border-t border-gray-100 flex justify-center bg-gray-50 items-center">
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            * 混合存储模式 (API + Local)
-          </span>
         </div>
       </div>
     </div>
