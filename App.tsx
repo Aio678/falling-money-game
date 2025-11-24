@@ -15,7 +15,7 @@ function App() {
   useEffect(() => {
     // Load saved skin (hybrid check)
     const loadSkin = async () => {
-        const skin = await dataManager.getSkinPreference(''); // Empty name = only local check usually, unless we auth later
+        const skin = await dataManager.getSkinPreference(''); // Empty name = only local check usually
         if (skin) {
             setCharacterSkin(skin);
         }
@@ -67,6 +67,7 @@ function App() {
           score={finalScore} 
           onRestart={startGame} 
           onHome={goToMenu} 
+          currentSkin={characterSkin}
         />
       )}
 

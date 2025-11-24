@@ -3,6 +3,12 @@ import { ScoreEntry, CharacterId } from '../types';
 import { GAME_CONSTANTS } from '../constants';
 import { supabase } from './supabaseClient';
 
+export interface SaveResult {
+  success: boolean;
+  savedLocally: boolean;
+  error?: any;
+}
+
 /**
  * Data Manager (Supabase Version)
  * Strategies:
@@ -25,7 +31,7 @@ export const dataManager = {
       if (data) {
         return data.map((d: any) => ({
           id: d.id.toString(),
-          name: d.name,
+          name: d.player_name, // Map database 'player_name' to frontend 'name'
           score: d.score,
           date: d.created_at
         }));
@@ -46,7 +52,7 @@ export const dataManager = {
     return [];
   },
 
-  async saveScore(name: string, score: number): Promise<void> {
+  async saveScore(name: string, score: number, skin: CharacterId = 'boy'): Promise<SaveResult> {
     const entry: ScoreEntry = {
       id: Date.now().toString(),
       name,
@@ -54,8 +60,8 @@ export const dataManager = {
       date: new Date().toISOString()
     };
 
-    // 1. Always save to LocalStorage as backup/cache immediately for UI responsiveness
-    const localData = await this.getLeaderboardFallback();
+    // 1. Always save to LocalStorage as backup/cache immediately
+    const localData = this.getLeaderboardFallback();
     localData.push(entry);
     localData.sort((a, b) => b.score - a.score);
     localStorage.setItem(GAME_CONSTANTS.STORAGE_KEY, JSON.stringify(localData.slice(0, 50)));
@@ -64,11 +70,26 @@ export const dataManager = {
     try {
       const { error } = await supabase
         .from('game_scores')
-        .insert([{ name, score }]);
+        .insert([{ 
+            player_name: name, 
+            score: score, 
+            character_skin: skin // Save the skin used!
+        }]);
       
-      if (error) throw error;
-    } catch (e) {
+      if (error) {
+          console.error("Supabase Error Details:", {
+              code: error.code,
+              message: error.message,
+              details: error.details,
+              hint: error.hint
+          });
+          throw error;
+      }
+
+      return { success: true, savedLocally: true };
+    } catch (e: any) {
       console.warn('Supabase save failed, saved locally only.', e);
+      return { success: false, savedLocally: true, error: e };
     }
   },
 
@@ -107,7 +128,6 @@ export const dataManager = {
           
         if (error) throw error;
       } catch (e) {
-        // ignore
         console.warn('Failed to sync skin preference', e);
       }
     }

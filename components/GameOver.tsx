@@ -1,36 +1,49 @@
 
-import React, { useState } from 'react';
-import { Home, RotateCcw, Save } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Home, RotateCcw, Save, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Button } from './Button';
 import { soundManager } from '../utils/audio';
 import { dataManager } from '../utils/dataManager';
+import { CharacterId } from '../types';
 
 interface GameOverProps {
   score: number;
   onRestart: () => void;
   onHome: () => void;
+  currentSkin?: CharacterId; // Added prop to know which skin was used
 }
 
-export const GameOver: React.FC<GameOverProps> = ({ score, onRestart, onHome }) => {
+export const GameOver: React.FC<GameOverProps> = ({ score, onRestart, onHome, currentSkin = 'boy' }) => {
   const [name, setName] = useState('');
-  const [saved, setSaved] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<'none' | 'cloud' | 'local'>('none');
   const [isSaving, setIsSaving] = useState(false);
+
+  // Try to pre-fill name if we have it locally
+  useEffect(() => {
+      const lastPlayer = localStorage.getItem('falling_money_last_player');
+      if (lastPlayer) setName(lastPlayer);
+  }, []);
 
   const handleSave = async () => {
     if (!name.trim()) return;
     setIsSaving(true);
     soundManager.play('click');
     
-    await dataManager.saveScore(name.trim().substring(0, 10), score);
+    // Save last player name for convenience
+    localStorage.setItem('falling_money_last_player', name.trim());
+
+    // Call dataManager and wait for result
+    // Pass the currentSkin so we know who achieved this score!
+    const result = await dataManager.saveScore(name.trim().substring(0, 10), score, currentSkin);
     
     // Also try to save skin preference since we have a name now
-    const currentSkin = localStorage.getItem('falling_money_skin');
-    if (currentSkin) {
-        await dataManager.saveSkinPreference(name.trim(), currentSkin as any);
-    }
+    await dataManager.saveSkinPreference(name.trim(), currentSkin);
 
     setIsSaving(false);
-    setSaved(true);
+    
+    // Set status based on whether cloud save succeeded
+    setSaveStatus(result.success ? 'cloud' : 'local');
+    
     soundManager.play('coin'); // Success sound
   };
 
@@ -54,7 +67,7 @@ export const GameOver: React.FC<GameOverProps> = ({ score, onRestart, onHome }) 
           <div className="text-5xl font-mono font-bold text-green-600 my-2">${score}</div>
         </div>
 
-        {!saved ? (
+        {saveStatus === 'none' ? (
           <div className="mb-6 bg-gray-50 p-4 rounded-xl">
             <label className="block text-sm font-medium text-gray-700 mb-2">记录你的战绩</label>
             <div className="flex gap-2">
@@ -80,8 +93,22 @@ export const GameOver: React.FC<GameOverProps> = ({ score, onRestart, onHome }) 
             </div>
           </div>
         ) : (
-          <div className="mb-6 text-center text-green-600 font-bold bg-green-50 p-3 rounded-xl border border-green-100">
-            ✅ 成绩已保存!
+          <div className={`mb-6 text-center font-bold p-3 rounded-xl border flex items-center justify-center gap-2 ${
+              saveStatus === 'cloud' 
+              ? 'bg-green-50 border-green-100 text-green-600' 
+              : 'bg-yellow-50 border-yellow-100 text-yellow-700'
+          }`}>
+            {saveStatus === 'cloud' ? (
+                <>
+                    <CheckCircle2 className="w-5 h-5" />
+                    成绩已保存!
+                </>
+            ) : (
+                <>
+                    <AlertTriangle className="w-5 h-5" />
+                    已保存到本地 (云端同步失败)
+                </>
+            )}
           </div>
         )}
 
@@ -96,4 +123,4 @@ export const GameOver: React.FC<GameOverProps> = ({ score, onRestart, onHome }) 
       </div>
     </div>
   );
-};
+}
