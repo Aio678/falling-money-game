@@ -1,6 +1,7 @@
 
 export const GAME_CONSTANTS = {
-  PLAYER_WIDTH_PERCENT: 10, // Reduced from 15 to 10 to make character smaller
+  PLAYER_WIDTH_PERCENT: 8, // Reduced from 15 to 8 for better desktop scaling
+  PLAYER_MIN_WIDTH_PX: 80, // Minimum width in pixels to prevent tiny character on mobile
   PLAYER_Y_OFFSET_PX: 110, // Distance of the catch zone from bottom
   SPAWN_RATE_MS: 450, // Initial spawn rate
   MIN_SPEED: 4, // Initial base speed (slightly lower to start)

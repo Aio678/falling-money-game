@@ -13,15 +13,24 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ onBack }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadScores();
-  }, []);
+    // 1. Load local immediately (Optimistic UI)
+    const cached = dataManager.getLeaderboardFallback();
+    if (cached.length > 0) {
+      setScores(cached);
+      setLoading(false);
+    }
 
-  const loadScores = async () => {
-    setLoading(true);
-    const data = await dataManager.getLeaderboard();
-    setScores(data);
-    setLoading(false);
-  };
+    // 2. Fetch fresh data from cloud in background
+    const fetchCloud = async () => {
+      const data = await dataManager.getLeaderboard();
+      if (data && data.length > 0) {
+        setScores(data);
+      }
+      setLoading(false);
+    };
+    
+    fetchCloud();
+  }, []);
 
   return (
     <div className="flex flex-col items-center h-full w-full bg-indigo-50 p-6 pt-12 overflow-hidden">
@@ -38,7 +47,7 @@ export const Leaderboard: React.FC<LeaderboardProps> = ({ onBack }) => {
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
-          {loading ? (
+          {loading && scores.length === 0 ? (
              <div className="flex flex-col items-center justify-center h-64 text-indigo-300">
                 <div className="animate-spin w-8 h-8 border-4 border-indigo-500 border-t-transparent rounded-full mb-4"></div>
                 <p>加载数据中...</p>

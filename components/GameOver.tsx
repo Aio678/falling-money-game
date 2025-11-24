@@ -32,12 +32,13 @@ export const GameOver: React.FC<GameOverProps> = ({ score, onRestart, onHome, cu
     // Save last player name for convenience
     localStorage.setItem('falling_money_last_player', name.trim());
 
-    // Call dataManager and wait for result
-    // Pass the currentSkin so we know who achieved this score!
-    const result = await dataManager.saveScore(name.trim().substring(0, 10), score, currentSkin);
-    
-    // Also try to save skin preference since we have a name now
-    await dataManager.saveSkinPreference(name.trim(), currentSkin);
+    // Parallel execution for speed
+    // Casting to CharacterId to ensure type compatibility
+    const saveScorePromise = dataManager.saveScore(name.trim().substring(0, 10), score, currentSkin as CharacterId);
+    const saveSkinPromise = dataManager.saveSkinPreference(name.trim(), currentSkin as CharacterId);
+
+    // Wait for main save, skin pref can fail silently/async but we wait to be safe
+    const [result] = await Promise.all([saveScorePromise, saveSkinPromise]);
 
     setIsSaving(false);
     

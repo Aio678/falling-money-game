@@ -161,7 +161,10 @@ export const GameEngine: React.FC<GameEngineProps> = ({ onGameOver, onExit, char
   };
 
   const checkCollisions = (containerHeight: number, containerWidth: number) => {
-    const playerWidthPx = (containerWidth * GAME_CONSTANTS.PLAYER_WIDTH_PERCENT) / 100;
+    // NEW: Use Math.max to ensure hitbox has a minimum size on mobile
+    const calculatedPlayerWidth = (containerWidth * GAME_CONSTANTS.PLAYER_WIDTH_PERCENT) / 100;
+    const playerWidthPx = Math.max(calculatedPlayerWidth, GAME_CONSTANTS.PLAYER_MIN_WIDTH_PX);
+    
     const playerXPx = (containerWidth * playerXRef.current) / 100;
     const playerYPx = containerHeight - GAME_CONSTANTS.PLAYER_Y_OFFSET_PX; 
     const playerHitboxSize = playerWidthPx * 0.6;
@@ -413,6 +416,8 @@ export const GameEngine: React.FC<GameEngineProps> = ({ onGameOver, onExit, char
         style={{ 
           left: '50%',
           width: `${GAME_CONSTANTS.PLAYER_WIDTH_PERCENT}%`,
+          minWidth: `${GAME_CONSTANTS.PLAYER_MIN_WIDTH_PX}px`, // FORCE MIN SIZE ON MOBILE
+          aspectRatio: '1/1' // Ensure height matches width so it doesn't collapse
         }}
       >
         <div className="relative flex flex-col items-center">
